@@ -9,7 +9,6 @@ import torch
 import torch.utils.data as data
 from scipy.io import loadmat
 
-# [关键] 导入您的 transform 模块，确保预处理逻辑一致
 from operation import transform
 
 from utils.geometry import (
@@ -67,7 +66,6 @@ class ExternalPredCorrectionDataset(data.Dataset):
         self.input_w = int(args.input_w)
         self.down_ratio = int(args.target_feature_stride)
 
-        # [关键] 复用 transform，确保行为一致
         self.eval_aug = transform.Compose([transform.ConvertImgFloat()])
 
         # --- 1) 收集 images ---
@@ -213,10 +211,6 @@ class ExternalPredCorrectionDataset(data.Dataset):
             raise RuntimeError(f"[GT] key='{self.gt_key}' not found: {gt_path}")
         gt_pts = gt_pts.astype(np.float32).reshape(-1, 2)
 
-        # -----------------------------------------------------------
-        # [HARD REQUIREMENT: Z-ORDER -> LOOP-ORDER CONVERSION HERE]
-        # 原始 .mat 是 Z形 (TL, TR, BL, BR) -> 必须转为 Loop (TL, TR, BR, BL)
-        # -----------------------------------------------------------
 
         # 临时 reshape 成 (17, 4, 2) 方便操作
         gt_loop = gt_pts.reshape(self.num_vertebrae, 4, 2).copy()
@@ -252,7 +246,7 @@ class ExternalPredCorrectionDataset(data.Dataset):
         img_tensor = torch.from_numpy(np.transpose(image_aug, (2, 0, 1))).float()
         img_tensor.div_(255.0).sub_(0.5)
 
-        # 7. Features (现在数据已是 Loop，直接计算特征，特征就是闭环逻辑的)
+        # 7. Features 
         connection_features = calc_connection_features_from_err(pred_aug, self.num_vertebrae)
         intrinsic_shape_features = calc_intrinsic_shape_features_np(pred_aug)
 
@@ -263,7 +257,6 @@ class ExternalPredCorrectionDataset(data.Dataset):
             "pred_path": pred_path,
             "pred_filename": it["pred_filename"],
 
-            # 输出给 Evaluator 的数据已经是 Loop 顺序了
             "p_err": torch.from_numpy(np.ascontiguousarray(pred_aug)).float(),
             "p_gt": torch.from_numpy(np.ascontiguousarray(gt_aug)).float(),
 
@@ -271,4 +264,5 @@ class ExternalPredCorrectionDataset(data.Dataset):
             "intrinsic_shape_features": torch.from_numpy(np.ascontiguousarray(intrinsic_shape_features)).float(),
             "meta": meta,
         }
+
         return out
