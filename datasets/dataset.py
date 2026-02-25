@@ -98,12 +98,8 @@ class CorrectionDataset(data.Dataset):
         )
         self.eval_aug = transform.Compose([transform.ConvertImgFloat()])
 
-        # ✅ 你要求：不做其他操作
         self.mask_close_ky = 0
         self.mask_dilate_k = 0
-
-        # ✅ 假设 angle_sort_all 后每个椎体点序 = [tl, tr, bl, br]
-        # 如果你项目里实际是 [tl, tr, br, bl]，只需要把 bl_idx/br_idx 对调即可。
         self.tl_idx, self.tr_idx, self.bl_idx, self.br_idx = 0, 1, 3, 2
 
     def __len__(self):
@@ -192,9 +188,7 @@ class CorrectionDataset(data.Dataset):
         ct_int_xy: np.ndarray,          # (2,) int
         radius: int
     ):
-        """
-        ✅关键修复：patch 必须是 2D(h,w) 才能用 upd(h,w) 做 boolean index。
-        """
+
         Hf, Wf = weight_map_1hw.shape[1], weight_map_1hw.shape[2]
         x0, y0 = int(ct_int_xy[0]), int(ct_int_xy[1])
         r = int(max(0, radius))
@@ -297,7 +291,7 @@ class CorrectionDataset(data.Dataset):
 
     def build_spine_mask_68_ring_feat(self, p_gt_aug_4K2: np.ndarray) -> np.ndarray:
         """
-        ✅ 68点围起来的整体脊柱mask（feature scale）：
+        68点围起来的整体脊柱mask（feature scale）：
         - 右边界：每椎体 (tr, br) 串起来
         - 左边界：每椎体 (bl, tl) 反向串回来
         """
@@ -366,7 +360,6 @@ class CorrectionDataset(data.Dataset):
         p_gt_raw = p_gt_raw.astype(np.float32).reshape(-1, 2)
         p_err_raw = p_err_raw.astype(np.float32).reshape(-1, 2)
 
-        # ✅ 你说：顺序固定 + 做了排序
         p_gt_sorted = angle_sort_all(p_gt_raw)
         p_err_sorted = angle_sort_all(p_err_raw)
 
@@ -397,10 +390,9 @@ class CorrectionDataset(data.Dataset):
         # HM
         gt_global_hm = self._build_global_heatmap(p_gt_aug)
 
-        # ✅ Dense reg GT maps
         gt_corner_reg_map, gt_center_reg_map, gt_reg_weight_map = self._build_dense_regression_gt(p_gt_aug)
 
-        # ✅ 68点围起来的 mask（feature scale）
+        # 68点围起来的 mask（feature scale）
         gt_spine_mask = self.build_spine_mask_68_ring_feat(p_gt_aug)
 
         connection_features = calc_connection_features_from_err(p_err_aug, self.num_vertebrae)
@@ -420,7 +412,6 @@ class CorrectionDataset(data.Dataset):
 
             "gt_global_hm": torch.from_numpy(gt_global_hm).float(),
 
-            # ✅ NEW dense maps
             "gt_corner_reg_map": torch.from_numpy(gt_corner_reg_map).float(),   # (8,Hf,Wf)
             "gt_center_reg_map": torch.from_numpy(gt_center_reg_map).float(),   # (2,Hf,Wf)
             "gt_reg_weight_map": torch.from_numpy(gt_reg_weight_map).float(),   # (1,Hf,Wf)
