@@ -3,7 +3,6 @@ import math
 import torch
 import cv2 # 用于可视化
 
-# --- (高斯函数, 无变化) ---
 def gaussian_radius(det_size, min_overlap=0.7):
     height, width = det_size
 
@@ -53,10 +52,8 @@ def draw_umich_gaussian(heatmap, center, radius, k=1):
         np.maximum(masked_heatmap, masked_gaussian * k, out=masked_heatmap)
     return heatmap
 
-# --- (★★★ 关键修改：修复排序逻辑 V8 - 你的逻辑) ★★★
 def rearrange_by_angle_np(pts4):
     """
-    ★★★ 修复 V8：实现你的鲁棒逻辑 ★★★
     1. arctan2 获得循环顺序 [A,B,C,D]
     2. 找到全局“最高点” (min Y)
     3. 在循环中找到它，检查其邻居 (长/短)
@@ -146,15 +143,13 @@ def angle_sort_all(flat_pts):
         if np.any(np.isnan(pts_4)) or np.all(pts_4 == 0):
             out[s:s+4] = pts_4
             continue
-        # ★★★ 使用修复后的排序函数 V8 ★★★
         out[s:s+4] = rearrange_by_angle_np(pts_4)
     
     return out # (K*4, 2)
 
-# --- (★★★ 关键修改：恢复你原来的 3 维连接特征) ★★★
 def calc_connection_features_from_err(p_err_points_np, K):
-    """ (Numpy 版本，用于 Dataset)
-    为 RNN 计算连接特征 (来自你的旧代码)。
+    """ 
+    为 RNN 计算连接特征。
     输出: (K-1, 3) -> [dx_norm, dy_norm, L_norm]
     """
     num_v = K; num_conn = num_v - 1
@@ -163,7 +158,6 @@ def calc_connection_features_from_err(p_err_points_np, K):
         return np.zeros((max(0, num_conn), 3), dtype=np.float32)
         
     try:
-        # p_err_points_np 已经是按 angle_sort_all (修复版) 排序过的
         p = p_err_points_np.reshape((num_v, 4, 2))
         centers = np.mean(p, axis=1) # (K, 2)
         
@@ -176,7 +170,6 @@ def calc_connection_features_from_err(p_err_points_np, K):
         edge23 = np.linalg.norm(p2-p3, axis=-1) # 长
         edge30 = np.linalg.norm(p3-p0, axis=-1) # 短
         
-        # 原始逻辑是平均所有边，保持不变
         avg_size = (edge01+edge12+edge23+edge30)/4.0
         Global = np.mean(avg_size[avg_size>0]) + 1e-6 # 避免除以0
 
@@ -197,7 +190,7 @@ def calc_connection_features_from_err(p_err_points_np, K):
         print(f"[Error in calc_connection_features_from_err]: {e}")
         return np.zeros((max(0, num_conn), 3), dtype=np.float32)
 
-# ★★★ V22 新增: Numpy 版本的形状特征计算器 ★★★
+
 def calc_intrinsic_shape_features_np(p_k42, eps: float = 1e-8) -> np.ndarray:
     """
     (Numpy) 提取8个归一化的、基于中点的形状特征。
