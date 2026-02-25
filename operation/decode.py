@@ -1,26 +1,3 @@
-# -*- coding: utf-8 -*-
-# ============================================================
-# File: operation/decode.py
-# 说明：
-#   DecDecoder：全局椎体中心热图 + 四角点 offset 的解码器
-#   新增：
-#     - candidate_topk：先取较多的候选 peak
-#     - conf_thresh：最小响应阈值
-#     - seg_thr：结合分割概率图，对候选 peak 做过滤
-#   注意：
-#     - 仍然保持 pts 的列布局不变：
-#         0: cx, 1: cy,
-#         2-3: tl_x, tl_y,
-#         4-5: tr_x, tr_y,
-#         6-7: br_x, br_y,
-#         8-9: bl_x, bl_y,
-#         10: score
-#
-#   ✅ 新增（不影响旧逻辑）：
-#     - decode_peaks(): 只做 NMS+topk+seg过滤，返回 peak 坐标（torch）
-#     - decode_peak1(): 返回 top1 peak（torch）
-# ============================================================
-
 import torch
 import torch.nn.functional as F
 
@@ -100,9 +77,6 @@ class DecDecoder(object):
 
         return topk_score, topk_inds, topk_ys, topk_xs
 
-    # ============================================================
-    # ✅ 新增：仅 peak 解码（不回归角点）
-    # ============================================================
     @torch.no_grad()
     def decode_peaks(
         self,
