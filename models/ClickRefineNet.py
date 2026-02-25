@@ -27,7 +27,7 @@ class ClickCenterRefiner(nn.Module):
         # 输入通道组成:
         # 1. Image Features (Default: 64)
         # 2. Heatmap (1)
-        # 3. Corner Offsets (8)  <--- 新增
+        # 3. Corner Offsets (8) 
         # 4. CoordConv (Optional: 2)
 
         in_ch = in_channels_feat + 1 + 8
@@ -62,7 +62,7 @@ class ClickCenterRefiner(nn.Module):
             self,
             feature_map: torch.Tensor,
             heatmap: torch.Tensor,
-            offsets: torch.Tensor,  # <--- 新增参数 (B, 8, H, W)
+            offsets: torch.Tensor, 
             centers_feat: torch.Tensor,
             roi_half_feat: torch.Tensor
     ) -> torch.Tensor:
@@ -142,7 +142,7 @@ class ClickCenterRefiner(nn.Module):
             self,
             feature_in: torch.Tensor,
             hm_in: torch.Tensor,
-            offsets_in: torch.Tensor,  # <--- 新增输入
+            offsets_in: torch.Tensor, 
             clicks_feat: torch.Tensor,
             roi_half_feat: torch.Tensor
     ) -> Dict[str, Any]:
