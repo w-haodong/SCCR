@@ -4,7 +4,6 @@ import cv2
 from PIL import Image, ImageEnhance, ImageOps
 
 def rescale_pts(pts, down_ratio):
-    # 【加固】增加None检查，虽然调用它的地方已保证pts不为None，但这是好习惯
     if pts is None:
         return None
     return np.asarray(pts, np.float32)/float(down_ratio)
@@ -21,7 +20,6 @@ class Compose(object):
 
 class ConvertImgFloat(object):
     def __call__(self, img, pts):
-        # 【修复点】
         if pts is not None:
             pts = pts.astype(np.float32)
         return img.astype(np.float32), pts
@@ -94,8 +92,6 @@ class Expand(object):
     def __call__(self, img, pts):
         if random.randint(2):
             return img, pts
-        
-        # 【修复点】
         if pts is None:
             return img, pts
             
@@ -104,7 +100,7 @@ class Expand(object):
         y1 = random.uniform(0, h*ratio-h)
         x1 = random.uniform(0, w*ratio-w)
         
-        # 【修复点】增加对pts是否为空的检查
+
         if len(pts) == 0 or np.max(pts[:,0])+int(x1)>w-1 or np.max(pts[:,1])+int(y1)>h-1:
             return img, pts
         else:
@@ -123,7 +119,6 @@ class RandomSampleCrop(object):
         self.min_win = min_win
 
     def __call__(self, img, pts):
-        # 【修复点】
         if pts is None:
             return img, pts
 
@@ -134,7 +129,6 @@ class RandomSampleCrop(object):
                 return img, pts
             for _ in range(50):
                 current_img = img
-                # 【修复点】
                 current_pts = pts.copy()
                 w = random.uniform(self.min_win*width, width)
                 h = random.uniform(self.min_win*height, height)
@@ -152,8 +146,6 @@ class RandomSampleCrop(object):
                         continue
                     else:
                         pts_new.append(pt)
-                
-                # 【修复点】如果所有点都被裁掉了，就重试
                 if len(pts_new) == 0:
                     continue
 
@@ -164,7 +156,6 @@ class RandomMirror_w(object):
         _,w,_ = img.shape
         if random.randint(2):
             img = img[:,::-1,:]
-            # 【修复点】
             if pts is not None:
                 pts[:,0] = w-pts[:,0]
         return img, pts
@@ -174,7 +165,6 @@ class RandomMirror_h(object):
         h,_,_ = img.shape
         if random.randint(2):
             img = img[::-1,:,:]
-            # 【修复点】
             if pts is not None:
                 pts[:,1] = h-pts[:,1]
         return img, pts
@@ -185,7 +175,6 @@ class Resize(object):
         self.dsize = (w,h)
     def __call__(self, img, pts):
         img_resized = cv2.resize(img, dsize=self.dsize)
-        # 【修复点】
         if pts is not None:
             h,w,c = img.shape
             pts[:, 0] = pts[:, 0]/w*self.dsize[0]
@@ -254,9 +243,7 @@ class RandomScale(object):
         - RandomScale(0.8)  # 会被当成 (0.8, 0.8)，即固定缩放
     """
     def __init__(self, scale_range=(0.4, 1.0), interpolation=cv2.INTER_LINEAR):
-        # 关键修改：统一成 (min,max) 的 tuple
         if isinstance(scale_range, (int, float)):
-            # 如果传的是单个数，就固定缩放到这个倍率
             self.scale_range = (float(scale_range), float(scale_range))
         else:
             assert len(scale_range) == 2, "scale_range 必须是长度为 2 的 tuple/list 或一个标量"
@@ -265,7 +252,6 @@ class RandomScale(object):
         self.interpolation = interpolation
 
     def __call__(self, img, pts):
-        # 这里就可以安全地用 [0],[1] 了
         scale = random.uniform(self.scale_range[0], self.scale_range[1])
 
         h, w, c = img.shape
@@ -273,7 +259,6 @@ class RandomScale(object):
         scaled_img = cv2.resize(img, (new_w, new_h), interpolation=self.interpolation)
         new_canvas = np.zeros_like(img, dtype=img.dtype)
 
-        # 如果没有关键点，只对图像缩放 + 居中
         if pts is None:
             paste_x = (w - new_w) // 2
             paste_y = (h - new_h) // 2
@@ -291,7 +276,6 @@ class RandomScale(object):
                     scaled_img[crop_y:crop_y+paste_h, crop_x:crop_x+paste_w]
             return new_canvas, None
 
-        # 有关键点则一起缩放 + 平移
         pts = pts.copy().astype(np.float32)
         pts *= scale
 
@@ -345,7 +329,7 @@ class RandomRotate(object):
         # 4. 对图像进行仿射变换（旋转）
         rotated_img = cv2.warpAffine(img, M, (w, h))
 
-        # 5. 【关键步骤】对关键点进行同样的旋转变换
+        # 5. 对关键点进行同样的旋转变换
         if pts is not None and len(pts) > 0:
             # 创建一个(N, 3)的矩阵，其中N是点的数量
             # [x, y] -> [x, y, 1] 方便进行矩阵乘法
@@ -357,5 +341,4 @@ class RandomRotate(object):
             rotated_pts = M.dot(pts_homogeneous.T).T
             return rotated_img, rotated_pts
         else:
-            # 如果没有关键点，只返回旋转后的图像
             return rotated_img, pts
