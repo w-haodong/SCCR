@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.autograd import Function
 
 # -----------------------------------------------------------------------------
-# 1. 梯度反转的 autograd.Function (核心实现)
+# 1. 梯度反转的 autograd.Function
 # -----------------------------------------------------------------------------
 class GradientReversalFunction(Function):
     """
@@ -36,7 +36,7 @@ class GradientReversalFunction(Function):
 # -----------------------------------------------------------------------------
 class GradientReversalLayer(nn.Module):
     """
-    【推荐的封装模式】将GradientReversalFunction封装为nn.Module。
+    将GradientReversalFunction封装为nn.Module。
     在forward方法中直接接收动态的lambda_参数。
     """
     def __init__(self):
@@ -47,7 +47,7 @@ class GradientReversalLayer(nn.Module):
         return GradientReversalFunction.apply(x, lambda_)
 
 # -----------------------------------------------------------------------------
-# 3. 域分类器 (保持不变)
+# 3. 域分类器
 # -----------------------------------------------------------------------------
 class DomainClassifier(nn.Module):
     """
