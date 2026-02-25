@@ -235,7 +235,7 @@ class ImageCanvas(QWidget):
             self.update()
             return
 
-        # 拖中心点：仅移动中心（和你原逻辑一致）
+        # 拖中心点：仅移动中心
         if self.is_dragging_center and self.selected_idx != -1:
             self.p_err_centers[self.selected_idx] = [float(x), float(y)]
             self.update()
@@ -268,7 +268,7 @@ class ImageCanvas(QWidget):
             self.update()
             return
 
-        # 释放中心：触发纠正（原行为）
+        # 释放中心：触发纠正
         if self.is_dragging_center and self.selected_idx != -1:
             if self.refine_callback:
                 curr_pt = self.p_err_centers[self.selected_idx]
@@ -650,7 +650,7 @@ class SAIC_GUI(QWidget):
             return float(np.interp(target_y, ys, xs))
 
     def _get_node_geometry(self, k):
-        # 【严格遵照指令】不打散点序，只按索引分组
+        # 不打散点序，只按索引分组
         if self.canvas.p_err_corners is None:
             return None, None, None, 0.0
 
@@ -818,4 +818,5 @@ class SAIC_GUI(QWidget):
         new_corners, new_logits = self.infer_and_update(int(k), float(x), float(y))
         if new_corners is not None:
             self.canvas.update_data_interactive(new_corners, new_logits)
+
         QTimer.singleShot(100, self._auto_step)
