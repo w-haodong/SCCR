@@ -15,7 +15,6 @@ from .DANN import GradientReversalLayer, DomainClassifier
 from .ClickRefineNet import ClickCenterRefiner
 from operation.decode import DecDecoder
 
-# 【关键】直接复用您项目中的几何计算工具，保证和训练一致
 try:
     from utils.geometry import calc_connection_features_from_err, calc_intrinsic_shape_features_np
 except ImportError:
@@ -128,20 +127,20 @@ class saic_net(nn.Module):
         return torch.nan_to_num(r_abs, nan=self.s2_R_default).clamp(self.s2_R_min, self.s2_R_max).view(B, 1)
 
     # -------------------- Forward --------------------
-    # 【修改 1】forward 中加入消融参数
+    # forward 中加入消融参数
     def forward(self, batch, phase="infer", alpha=None, stage2_grad=True,
                 ablate_geo=False, ablate_topo=False, **kwargs):
         x = batch["input_image"]
 
-        # 【修改 2】调用 err_det_net.ab_forward 并传入消融参数
+        # 调用 err_det_net.ab_forward 并传入消融参数
         outputs = self.err_det_net.ab_forward(
             vit_block_outputs=self.encoder(x, self.vit_input_layer_indices),
             p_err=batch.get("p_err", None),
             connection_features=batch.get("connection_features", None),
             intrinsic_shape_features=batch.get("intrinsic_shape_features", None),
             img_shape_HW=x.shape[2:],
-            ablate_geo=ablate_geo,  # 传入
-            ablate_topo=ablate_topo  # 传入
+            ablate_geo=ablate_geo,  
+            ablate_topo=ablate_topo  
         )
 
         if alpha is not None and "content_features" in outputs:
@@ -219,7 +218,7 @@ class saic_net(nn.Module):
         return outputs
 
     # ==========================================================
-    # 交互接口 1: Refine (无需消融，这是Stage2)
+    # 交互接口 1: Refine
     # ==========================================================
     @torch.no_grad()
     def inference_interactive(self, cached_features, target_idx, new_x, new_y):
@@ -274,9 +273,8 @@ class saic_net(nn.Module):
         }
 
     # ==========================================================
-    # 交互接口 2: 重预测错误 (调用原生几何函数)
+    # 交互接口 2: 重预测错误
     # ==========================================================
-    # 【修改 3】re_predict_errors 中加入消融参数
     @torch.no_grad()
     def re_predict_errors(self, cached_vit_outputs, new_p_err_abs, img_shape_HW,
                           ablate_geo=False, ablate_topo=False):
@@ -298,7 +296,6 @@ class saic_net(nn.Module):
         # 4. 将 p_err 展平为 (B, 68, 2) 以匹配 ErrorDetNet 的输入
         p_err_flat = new_p_err_abs.view(B, -1, 2)
 
-        # 【修改 4】调用 ab_forward 传入消融参数
         outputs = self.err_det_net.ab_forward(
             vit_block_outputs=cached_vit_outputs,
             p_err=p_err_flat,
@@ -312,4 +309,5 @@ class saic_net(nn.Module):
         if "error_logits" in outputs:
             return outputs["error_logits"]
         else:
+
             return torch.zeros((1, self.K, 2), device=device)
