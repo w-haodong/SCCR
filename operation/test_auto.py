@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-# operation/test_qt.py
-# FINAL VERSION: Pure Geometric Extension (No Mask Noise) + 4-Color Vis
-
 import sys
 import os
 import copy
@@ -820,3 +816,4 @@ class SAIC_GUI(QWidget):
             self.canvas.update_data_interactive(new_corners, new_logits)
 
         QTimer.singleShot(100, self._auto_step)
+
