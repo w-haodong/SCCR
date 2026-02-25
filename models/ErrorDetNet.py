@@ -350,7 +350,7 @@ class err_det_net(nn.Module):
             's1_sam_stride': float(self.sam_feature_stride),
         }
 
-        # detector 分支需要监督特征才算
+
         if (p_err is None) or (connection_features is None) or (intrinsic_shape_features is None):
             return out
 
@@ -431,6 +431,7 @@ class err_det_net(nn.Module):
             'pred_corners_abs': pred_corners_abs.detach(),
         })
         return out
+
 
 
 __all__ = ["err_det_net", "LayerNorm2d"]
