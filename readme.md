@@ -13,4 +13,4 @@ We thank Meta AI for making the source code of Dino V3 publicly available. ([Din
 The dataset used in this paper is from AASCE 2019 (https://aasce19.grand-challenge.org/).
 
 ## Pre-trained parameters
-In this Github repository we provide the test code along with the pre-trained parameters file (shared via an online storage: model_latest.pth, link: https://pan.baidu.com/s/1O-60eWuQZnPZgjqWDl-f2w?pwd=6a5k  code: 6a5k). 
+In this Github repository we provide the test code along with the pre-trained parameters file (shared via an online storage: model_latest.pth, link: [https://pan.baidu.com/s/1O-60eWuQZnPZgjqWDl-f2w?pwd=6a5k](https://pan.baidu.com/s/1AQapIh8NY6hD_AsRXx-x0g?pwd=pfz5)  code: pfz5). 
