@@ -7,7 +7,7 @@ https://github.com/user-attachments/assets/2e9df2b7-1a94-42fa-bb0a-bedc914625da
 https://github.com/user-attachments/assets/2e952ff4-5e23-403f-9385-b99a20753182
 
 ## Acknowledgements
-We thank Meta AI for making the source code of Dino V3 publicly available. ([Dino: https://github.com/facebookresearch/segment-anything](https://github.com/facebookresearch/dinov3))
+We thank Meta AI for making the source code of Dino V3 publicly available. ([Dino: https://github.com/facebookresearch/dinov3](https://github.com/facebookresearch/dinov3))
 
 ## Datasets
 The dataset used in this paper is from AASCE 2019 (https://aasce19.grand-challenge.org/).
