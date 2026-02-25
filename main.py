@@ -25,8 +25,8 @@ def parse_args():
     )
 
     # ---------------- 路径与环境 ----------------
-    parser.add_argument('--work_dir', type=str, default='E:/work/scoliosis_jz/whd_jz_10/')
-    parser.add_argument('--data_dir', type=str, default='E:/datasets/scoliosis_jz/create_data/2026_0109_data/data_processed_v51/')
+    parser.add_argument('--work_dir', type=str, default='')
+    parser.add_argument('--data_dir', type=str, default='')
 
 
     # 训练模式：单域 or 双域联合 + 对抗
@@ -47,14 +47,14 @@ def parse_args():
     parser.add_argument(
         '--sam_checkpoint',
         type=str,
-        default='E:/work/scoliosis_jz/whd_jz_8/models/sam/work_dir/sam_vit_b_01ec64.pth'
+        default='./models/sam/work_dir/sam_vit_b_01ec64.pth'
     )
 
     # DINO 权重
     parser.add_argument(
         '--dino_checkpoint',
         type=str,
-        default='E:/work/scoliosis_jz/whd_jz_8//models/pth/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth',
+        default='./models/pth/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth',
         help="Path to DINOv3 ViT-B/16 weights."
     )
 
@@ -236,18 +236,6 @@ def main():
         trainer = Trainer(args)
         trainer.setup(peft_encoder, args)
         trainer.train()
-    elif args.phase in ('test_click'):
-        from operation.test_click import SAIC_GUI
-        # --- Qt 启动逻辑 ---
-        print("Starting Qt GUI...")
-        app = QApplication(sys.argv)
-
-        # 实例化我们的 GUI 窗口
-        gui = SAIC_GUI(args, peft_encoder)
-        gui.show()
-
-        # 进入事件循环，阻塞直到窗口关闭
-        sys.exit(app.exec_())
     elif args.phase in ('test_auto'):
         from operation.test_auto import SAIC_GUI
         # --- Qt 启动逻辑 ---
@@ -260,296 +248,10 @@ def main():
 
         # 进入事件循环，阻塞直到窗口关闭
         sys.exit(app.exec_())
-    elif args.phase in ('test_auto_corr_with_fullPred'):
-        from operation.test_auto_corr_with_fullPred import SAIC_GUI
-        # --- Qt 启动逻辑 ---
-        print("Starting Qt GUI...")
-        app = QApplication(sys.argv)
-
-        # 实例化我们的 GUI 窗口
-        gui = SAIC_GUI(args, peft_encoder)
-        gui.show()
-
-        # 进入事件循环，阻塞直到窗口关闭
-        sys.exit(app.exec_())
-        # +++ 修改 2: 添加 eval 分支 +++
-
-    elif args.phase in ('test_ann'):
-        from operation.test_auto_annotation import SAIC_GUI
-        # --- Qt 启动逻辑 ---
-        print("Starting Qt GUI...")
-        app = QApplication(sys.argv)
-
-        # 实例化我们的 GUI 窗口
-        gui = SAIC_GUI(args, peft_encoder)
-        gui.show()
-
-        # 进入事件循环，阻塞直到窗口关闭
-        sys.exit(app.exec_())
-        # +++ 修改 2: 添加 eval 分支 +++
-    elif args.phase == 'eval':
-        print("Starting Headless Evaluation (Auto Correction)...")
-        from operation.eval_auto import Evaluator
-        # 实例化 Evaluator
-        evaluator = Evaluator(args, peft_encoder)
-
-        # 确定权重路径
-        ckpt_path = args.resume
-        # 如果不是绝对路径，也不是相对路径存在的文件，则去 work_dir 找
-        if not os.path.isfile(ckpt_path):
-            potential_path = os.path.join(args.work_dir, args.resume)
-            if os.path.isfile(potential_path):
-                ckpt_path = potential_path
-            else:
-                print(f"[Warning] Checkpoint not found at {ckpt_path} or {potential_path}")
-
-        # 加载权重并运行
-        evaluator.load_weights(ckpt_path)
-        evaluator.evaluate()
-    elif args.phase == 'eval_acc':
-        print("Starting Headless Evaluation (Error Detection Metrics + Plots)...")
-        from operation.eval_acc import ErrorEvaluator
-        NODE_THR = 0.5  # 节点错误判定阈值 (原 0.3)
-        CONN_THR = 0.5  # 连接错误判定阈值 (原 0.7)
-        # 实例化 ErrorEvaluator
-        evaluator = ErrorEvaluator(
-            args,
-            peft_encoder,
-            node_thr=NODE_THR,  # 传入节点阈值
-            conn_thr=CONN_THR,  # 传入连接阈值
-             )
-
-        # 确定权重路径（优先用 args.resume；若不是文件则拼到 work_dir）
-        ckpt_path = args.resume
-        if not os.path.isfile(ckpt_path):
-            potential_path = os.path.join(args.work_dir, args.resume)
-            if os.path.isfile(potential_path):
-                ckpt_path = potential_path
-            else:
-                print(f"[Warning] Checkpoint not found at {ckpt_path} or {potential_path}")
-
-        # 加载权重并运行
-        if os.path.isfile(ckpt_path):
-            evaluator.load_weights(ckpt_path)
-        else:
-            print("[Warning] Running evaluation without loading weights (random/init weights).")
-
-        evaluator.evaluate()
-    elif args.phase == 'eval_corr':
-        print("Starting Headless Evaluation (Auto Correction Metrics)...")
-        # 你的新文件名：operation/eval_corr.py
-        from operation.eval_corr import Evaluator
-
-        evaluator = Evaluator(args, peft_encoder)
-
-        # 确定权重路径（优先 args.resume；否则拼到 work_dir）
-        ckpt_path = args.resume
-        if not os.path.isfile(ckpt_path):
-            potential_path = os.path.join(args.work_dir, args.resume)
-            if os.path.isfile(potential_path):
-                ckpt_path = potential_path
-            else:
-                print(f"[Warning] Checkpoint not found at {ckpt_path} or {potential_path}")
-
-        # 加载权重并运行
-        if os.path.isfile(ckpt_path):
-            evaluator.load_weights(ckpt_path)
-        else:
-            print("[Warning] Running evaluation without loading weights (random/init weights).")
-
-        evaluator.evaluate()
-    elif args.phase == 'eval_auto_pred_with_corr':
-        print("Starting Headless Evaluation (Auto Correction Metrics)...")
-        # 你的新文件名：operation/eval_corr.py
-        from operation.eval_auto_pred_with_corr import Evaluator
-
-        evaluator = Evaluator(args, peft_encoder)
-
-        # 确定权重路径（优先 args.resume；否则拼到 work_dir）
-        ckpt_path = args.resume
-        if not os.path.isfile(ckpt_path):
-            potential_path = os.path.join(args.work_dir, args.resume)
-            if os.path.isfile(potential_path):
-                ckpt_path = potential_path
-            else:
-                print(f"[Warning] Checkpoint not found at {ckpt_path} or {potential_path}")
-
-        # 加载权重并运行
-        if os.path.isfile(ckpt_path):
-            evaluator.load_weights(ckpt_path)
-        else:
-            print("[Warning] Running evaluation without loading weights (random/init weights).")
-
-        evaluator.evaluate()
-
-
-    elif args.phase == "eval_auto_corr_other_pred":
-        print("Starting Headless Evaluation (Auto Correction on External Predictions)...")
-        # =========================================================
-        # ✅ 外部数据路径
-        # =========================================================
-        aid_dataset = "target"
-        external_root = r"E:\投稿\脊柱纠正\res_pr_other\\" + aid_dataset
-
-        images_dir = os.path.join(external_root, "images")
-        # 1. 定义模型根目录：用于存放 heatmap 等子文件夹
-        pred_dir_name = "contour"
-        pred_root_dir = os.path.join(external_root, pred_dir_name)  # E:\...\HTN
-
-        # 2. 定义 mat 文件目录：你的 mat 实际上在 point 子文件夹
-        pred_mat_dir = os.path.join(pred_root_dir, "point")  # E:\...\HTN\point
-        gt_dir = os.path.join(external_root, "labels")
-
-        pred_key = "pr_landmarks"
-        gt_key = "p2"
-
-        corrected_dir = os.path.join(external_root, f"{pred_dir_name}_corrected")
-        weight_path = os.path.join(args.work_dir, "latest_model.pth")
-        # =========================================================
-
-        # 【新增】定义阈值变量，方便修改对比
-        NODE_THR = 0.05  # 节点错误判定阈值 (原 0.3)
-        CONN_THR = 0.95  # 连接错误判定阈值 (原 0.7)
-
-        from datasets.external_pred_dataset import ExternalPredCorrectionDataset
-        # ✅ Dataset 读取 mat，所以传 pred_mat_dir
-
-        dset = ExternalPredCorrectionDataset(
-            args=args,
-            images_dir=images_dir,
-            pred_dir=pred_mat_dir,  # 指向 .../point
-            gt_dir=gt_dir,
-            pred_key=pred_key,
-            gt_key=gt_key,
-            strip_pred_prefixes=("pl_",),
-            debug_print_examples=True,
-        )
-
-        from operation.eval_auto_other_pred_with_p import Evaluator
-        # ✅ Evaluator 查找 heatmap，所以传根目录 pred_root_dir (内部会自动拼 /heatmap)
-        # ✅ 传入自定义阈值
-        evaluator = Evaluator(
-            args=args,
-            peft_encoder=peft_encoder,
-            dataset=dset,
-            pred_key=pred_key,
-            corrected_dir=corrected_dir,
-            results_subdir=f"eval_{pred_dir_name}_results",
-            pred_dir=pred_root_dir,  # 传入根目录
-            node_thr=NODE_THR,  # 传入节点阈值
-            conn_thr=CONN_THR,  # 传入连接阈值
-            aid_dataset=aid_dataset
-        )
-        ok = evaluator.load_weights(weight_path)
-        if not ok:
-            raise RuntimeError(f"Load weights failed: {weight_path}")
-
-        evaluator.evaluate()
-    elif args.phase == "eval_auto_corr_other_pred_xh":
-        print("Starting Headless Evaluation Loop (Auto Correction on External Predictions)...")
-
-        # 引入必要的包（移到循环外）
-        from datasets.external_pred_dataset import ExternalPredCorrectionDataset
-        from operation.eval_auto_other_pred_with_p import Evaluator
-        import gc
-
-        # =========================================================
-        # ✅ 循环配置
-        # =========================================================
-        target_datasets = ["source","target"]
-        target_algorithms = ["vf_ld", "htn", "biss", "contour", "sam_seg"]
-
-        # 定义基础路径前缀
-        base_root = r"E:\投稿\脊柱纠正\res_pr_other"
-        weight_path = os.path.join(args.work_dir, "latest_model.pth")
-
-        # 定义常量参数
-        pred_key = "pr_landmarks"  # ⚠️注意：如果不同算法生成的mat文件内部key不同，这里需要做字典映射
-        gt_key = "p2"
-        NODE_THR = 0.05
-        CONN_THR = 0.95
-
-        # =========================================================
-        # 🔄 双层循环开始
-        # =========================================================
-        for aid_dataset in target_datasets:
-            print(f"\n{'=' * 60}")
-            print(f"🚀 Processing Dataset: {aid_dataset}")
-            print(f"{'=' * 60}")
-
-            external_root = os.path.join(base_root, aid_dataset)
-            images_dir = os.path.join(external_root, "images")
-            gt_dir = os.path.join(external_root, "labels")
-
-            for pred_dir_name in target_algorithms:
-                print(f"\n   >> Algorithm: {pred_dir_name}")
-
-                # 1. 动态构建路径
-                pred_root_dir = os.path.join(external_root, pred_dir_name)  # E:\...\dataset\algo
-                pred_mat_dir = os.path.join(pred_root_dir, "point")  # E:\...\dataset\algo\point
-
-                # 2. 结果保存路径区分算法
-                corrected_dir = os.path.join(external_root, f"{pred_dir_name}_corrected")
-                results_subdir = f"eval_{pred_dir_name}_results"
-
-                # 🛠️ 安全检查：如果文件夹不存在，跳过
-                if not os.path.exists(pred_mat_dir):
-                    print(f"      [Warning] Path not found, skipping: {pred_mat_dir}")
-                    continue
-
-                try:
-                    # 3. 初始化 Dataset
-                    dset = ExternalPredCorrectionDataset(
-                        args=args,
-                        images_dir=images_dir,
-                        pred_dir=pred_mat_dir,
-                        gt_dir=gt_dir,
-                        pred_key=pred_key,
-                        gt_key=gt_key,
-                        strip_pred_prefixes=("pl_",),
-                        debug_print_examples=False,  # 批量跑建议关闭debug打印
-                    )
-
-                    print(f"      Loaded {len(dset)} samples.")
-
-                    # 4. 初始化 Evaluator
-                    evaluator = Evaluator(
-                        args=args,
-                        peft_encoder=peft_encoder,
-                        dataset=dset,
-                        pred_key=pred_key,
-                        corrected_dir=corrected_dir,
-                        results_subdir=results_subdir,
-                        pred_dir=pred_root_dir,
-                        node_thr=NODE_THR,
-                        conn_thr=CONN_THR,
-                        aid_dataset=aid_dataset
-                    )
-
-                    # 5. 加载权重
-                    ok = evaluator.load_weights(weight_path)
-                    if not ok:
-                        print(f"      [Error] Load weights failed for {weight_path}")
-                        continue
-
-                    # 6. 开始评估
-                    evaluator.evaluate()
-
-                    print(f"      ✅ Finished {aid_dataset} - {pred_dir_name}")
-
-                    # 🧹 清理显存和对象，防止循环过程中内存泄漏
-                    del evaluator
-                    del dset
-                    torch.cuda.empty_cache()
-                    gc.collect()
-
-                except Exception as e:
-                    import traceback
-                    print(f"      ❌ Error processing {aid_dataset} - {pred_dir_name}: {e}")
-                    traceback.print_exc()
 
     print("Process finished.")
 
 
 if __name__ == '__main__':
     main()
+
